@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
-import android.provider.Contacts;
 import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -19,11 +18,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+
 public class MainActivity extends AppCompatActivity {
 
     private Button send;
     private EditText phoneNo;
     private EditText messageBody;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,7 +64,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent)
             {
-                chooseContact();
+                if(motionEvent.getAction()==MotionEvent.ACTION_UP)
+                {
+                    //do something
+                    chooseContact();
+                }
                 return false;
             }
         });
@@ -72,56 +77,45 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        switch (requestCode)
-        {
-            case (1):
+            super.onActivityResult(requestCode, resultCode, data);
 
             if (resultCode == Activity.RESULT_OK)
             {
-                Uri uri = data.getData();
-                Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-                String id = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
-
-                if (cursor.moveToFirst())
+                switch (requestCode)
                 {
-                      Cursor phones = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,null,ContactsContract.CommonDataKinds.Phone.CONTACT_ID+"="+id,null,null);
-                      phones.moveToFirst();
-
-                      String cNumber = phones.getString(phones.getColumnIndex("data1"));
-                    String phone = cursor.getString(cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
-                    phoneNo.setText(cNumber);
+                    case 1:
+                    pickContact(data);
+                    break;
                 }
-                cursor.close();
             }
-//                Uri contactData = data.getData();
-//                Cursor c = managedQuery(contactData,null,null,null,null);
-//                if (c.moveToFirst())
-//                {
-//                    String id = c.getString(c.getColumnIndexOrThrow(ContactsContract.Contacts._ID));
-//                    String hasPhone = c.getString(c.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER));
-//
-//                    if (hasPhone.equalsIgnoreCase("1"))
-//                    {
-//                      Cursor phones = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,null,ContactsContract.CommonDataKinds.Phone.CONTACT_ID+"="+id,null,null);
-//                      phones.moveToFirst();
-//
-//                       String cNumber = phones.getString(phones.getColumnIndex("data1"));
-//                        phoneNo.setText(cNumber);
-//
-//                        System.out.println("number is:"+cNumber);
-//                    }
-//                }
-//            }
-                break;
-        }
+
     }
 
     void chooseContact()
     {
         Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
         startActivityForResult(intent, 1);
+    }
+
+    void pickContact(Intent data)
+    {
+        Cursor cursor = null;
+        try {
+            String phoneNumber = null ;
+            // getData() method will have the Content Uri of the selected contact
+            Uri uri = data.getData();
+            //Query the content uri
+            cursor = getContentResolver().query(uri, null, null, null, null);
+            cursor.moveToFirst();
+            // column index of the phone number
+            int  phoneIndex =cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+            // column index of the contact name
+            phoneNumber = cursor.getString(phoneIndex);
+            // Set the value to the textviews
+            phoneNo.setText(phoneNumber);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     void sendSmsCallBack() {
